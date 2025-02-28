@@ -1,0 +1,17 @@
+{
+  "name": "async-queue",
+  "version": "0.0.1",
+  "description": "A lightweight but powerful asynchronous task queuing system, with smart task priority and configurable concurrency limit",
+  "main": "index.js",
+  "directories": {
+    "lib": "src"
+  },
+  "scripts": {
+    "build": "npx tsc"
+  },
+  "author": "Aleta Lovelace",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "moduleResolution": "Node16",
+    "module": "Node16",
+    "target": "ES2018",
+    "declaration": true,
+    "allowJs": true,
+    "strict": true,
+    "outDir": "./dist"
+  },
+  "files": ["src/index.ts"]
+}
