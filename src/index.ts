@@ -4,13 +4,13 @@ type QueueTask<T> = {
 	func: Resolver<T>;
 	resolve: (value: T) => void;
 	reject: (reason: any) => void;
-}
+};
 
 type AsyncQueueOptions = {
 	maxConcurrent?: number;
 	defaultPriority?: number;
 	delayMs?: number;
-}
+};
 
 export class AsyncQueue {
 	private queue: QueueTask<any>[] = [];
@@ -57,7 +57,7 @@ export class AsyncQueue {
 				value => task.reject(value)
 			).finally(() => setTimeout(() => {
 				this.busyTasks--;
-				this.continue();			
+				this.continue();
 			}, this.delayMs));
 		}
 	}
@@ -78,16 +78,16 @@ export class AsyncQueue {
 		fn: F,
 		priority: number | ((...args: Parameters<F>) => number) = this.defaultPriority
 	) {
-        type A = Parameters<F>;
-        type R = ReturnType<F> extends Promise<infer T> ? T : never;
-        return typeof priority == "function"
-            ? (...args: A) => this.enqueue<R>(
-                (resolve, reject) => fn(...args).then(resolve, reject),
-                priority(...args)
-            )
-            : (...args: A) => this.enqueue<R>(
-                (resolve, reject) => fn(...args).then(resolve, reject),
-                priority
-            );
+		type A = Parameters<F>;
+		type R = ReturnType<F> extends Promise<infer T> ? T : never;
+		return typeof priority == "function"
+			? (...args: A) => this.enqueue<R>(
+				(resolve, reject) => fn(...args).then(resolve, reject),
+				priority(...args)
+			)
+			: (...args: A) => this.enqueue<R>(
+				(resolve, reject) => fn(...args).then(resolve, reject),
+				priority
+			);
 	}
 }
