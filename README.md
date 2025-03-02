@@ -64,6 +64,11 @@ export const enqueueNotification = queue.createFunc(
     showNotification,
     (level, message) => level == "warning" ? 1 : 2
 );
+
+// wrap builtins, fixed priority
+const enqueueFetch = queue.createFunc(fetch, 2);
+const urgentFetch = queue.createFunc(fetch, 1);
+// all type information is inherited from from fetch
 ```
 
 ## Constructor options
