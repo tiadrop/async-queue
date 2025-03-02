@@ -7,6 +7,10 @@
   },
   "description": "A lightweight but powerful asynchronous task queuing system, with smart task priority and configurable concurrency limit",
   "main": "src/index.js",
+  "scripts": {
+    "prepublishOnly": "cp ../README.md .",
+    "postpublish": "rm README.md"
+  },
   "keywords": [
     "async",
     "Promise",
