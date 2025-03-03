@@ -68,7 +68,7 @@ export const enqueueNotification = queue.createFunc(
 // wrap builtins, fixed priority
 const enqueueFetch = queue.createFunc(fetch, 2);
 const urgentFetch = queue.createFunc(fetch, 1);
-// all type information is inherited from from fetch
+// all type information is inherited from fetch
 ```
 
 ## `queue.enqueueFunc()`
@@ -102,7 +102,7 @@ Specifies a delay between a queued task's completion and its concurrency slot be
 
 ### `paused: boolean`
 
-If true, the queue will start in a paused state; enqueued tasks will not be processed until unpause() is called. Default is false.
+If true, the queue will start in a paused state; enqueued tasks will not be processed until resume() is called. Default is false.
 
 ## Queue Management
 
