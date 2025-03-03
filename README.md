@@ -71,6 +71,19 @@ const urgentFetch = queue.createFunc(fetch, 1);
 // all type information is inherited from from fetch
 ```
 
+## `queue.enqueueFunc()`
+
+`enqueueFunc(fn, priority?)` adds an asynchronous function to the queue without wrapping it with `createFunc`. The function's resolution is forwarded to the Promise returned by `enqueueFunc()`.
+
+```ts
+async function getData(url: string) {
+    const response = await fetch(url);
+    return await response.json();
+}
+
+const data = await queue.enqueueFunc(() => getData("data.json"));
+```
+
 ## Constructor options
 
 `AsyncQueue`'s constructor can be passed an object with the following properties
