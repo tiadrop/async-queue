@@ -55,10 +55,15 @@ export class AsyncQueue {
 			result.then(
 				value => task.resolve(value),
 				value => task.reject(value)
-			).finally(() => setTimeout(() => {
-				this.busyTasks--;
-				this.continue();
-			}, this.delayMs));
+			).finally(
+				this.delayMs == 0 ? () => {
+					this.busyTasks--;
+					this.continue();
+				} : () => setTimeout(() => {
+					this.busyTasks--;
+					this.continue();
+				}, this.delayMs)
+			);
 		}
 	}
 
