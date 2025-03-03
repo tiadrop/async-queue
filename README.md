@@ -14,7 +14,7 @@ import { AsyncQueue } from "@xtia/async-queue";
 const queue = new AsyncQueue();
 
 // enqueue a task with a Promise-like interface:
-// (enqueue() returns a promise that forwards the task's resolution)
+// (enqueuing methods return a promise that forwards the task's resolution)
 const text = await queue.promise<Response>(resolve => {
     fetch(someUrl).then(resolve);
 }).then(r => r.text());
@@ -25,7 +25,7 @@ queue.promise(resolve => {
 }, 1);
 ```
 
-As well as resolution, promise rejection is forwarded by `enqueue`:
+As well as resolution, promise rejection is forwarded by enqueuing methods:
 ```ts
 queue.promise((resolve, reject) => {
     fetch("doesntexist.lol").then(resolve, reject);
@@ -73,7 +73,7 @@ const urgentFetch = queue.createFunc(fetch, 1);
 
 ## `queue.enqueueFunc()`
 
-`enqueueFunc(fn, priority?)` adds an asynchronous function to the queue without wrapping it with `createFunc`. The function's resolution is forwarded to the Promise returned by `enqueueFunc()`.
+`enqueueFunc(fn, priority?)` adds an asynchronous function to the queue without wrapping it with `createFunc`.
 
 ```ts
 async function getData(url: string) {
