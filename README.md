@@ -99,3 +99,15 @@ Specifies a standard priority. Default is 5.
 ### `delayMs: number`
 
 Specifies a delay between a queued task's completion and its concurrency slot becoming available for another task. Default is 0.
+
+### `paused: boolean`
+
+If true, the queue will start in a paused state; enqueued tasks will not be processed until unpause() is called. Default is false.
+
+## Queue Management
+
+* `queue.pause()` and `queue.resume()` halt and resume queue processing.
+* `queue.clear()` removes all queued tasks.
+* `queue.panic(value?)` rejects and removes all queued tasks.
+
+These methods do not affect active, on-going tasks.
