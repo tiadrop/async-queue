@@ -25,6 +25,12 @@ type AsyncQueueOptions = {
 	 * *Default is 0*
 	 */
 	delayMs?: number;
+	/**
+	 * If true, the queue will start in a paused state; enqueued tasks will not be processed until resume() is called
+	 * 
+	 * *Default is false*
+	 */
+	paused?: boolean;
 };
 
 export class AsyncQueue {
@@ -34,11 +40,13 @@ export class AsyncQueue {
 	private maxConcurrent: number;
 	private defaultPriority: number;
 	private delayMs: number;
+	private paused: boolean;
 
 	constructor(options?: AsyncQueueOptions) {
 		this.maxConcurrent = options?.maxConcurrent ?? 1;
 		this.defaultPriority = options?.defaultPriority ?? 5;
 		this.delayMs = options?.delayMs ?? 0;
+		this.paused = options?.paused ?? false;
 	}
 
 	private adjustPriorityCount(priority: number, delta: number) {
@@ -62,6 +70,7 @@ export class AsyncQueue {
 	}
 
 	private continue() {
+		if (this.paused) return;
 		while (this.busyTasks < this.maxConcurrent) {
 			if (this.queue.length == 0) return;
 
@@ -169,4 +178,22 @@ export class AsyncQueue {
 		this.clear();
 		rejecters.forEach(r => r(value));
 	}
+
+	/**
+	 * Pauses queue processing
+	 * 
+	 * Does not affect any on-going tasks
+	 */
+	pause() {
+		this.paused = true;
+	}
+
+	/**
+	 * Resumes queue processing
+	 */
+	resume() {
+		this.paused = false;
+		this.continue();
+	}
+
 }
