@@ -7,8 +7,23 @@ type QueueTask<T> = {
 };
 
 type AsyncQueueOptions = {
+	/**
+	 * Specifies maximum number of tasks to run at a given time
+	 * 
+	 * *Default is 1*
+	 */
 	maxConcurrent?: number;
+	/**
+	 * Specifies default priority to be assigned to tasks; lower values place the task toward the front of the queue
+	 * 
+	 * *Default is 5*
+	 */
 	defaultPriority?: number;
+	/**
+	 * Specifies a delay between a task completing and its concurrency slot becoming available for another task
+	 * 
+	 * *Default is 0*
+	 */
 	delayMs?: number;
 };
 
@@ -36,10 +51,14 @@ export class AsyncQueue {
 	}
 
 	private getInsertionIndex(priority: number) {
-		// find all present priorities less than or equal to given:
-		const ltePriorities = [...this.priorityCounts.keys()].filter(k => k <= priority);
-		// insertion point is sum of their counts:
-		return ltePriorities.reduce((acc, p) => acc + (this.priorityCounts.get(p) as number), 0);
+		let sum = 0;
+		const iter = this.priorityCounts.keys();
+		let item = iter.next();
+		while (!item.done) {
+			if (item.value <= priority) sum += this.priorityCounts.get(item.value) as number;
+			item = iter.next();
+		}
+		return sum;
 	}
 
 	private continue() {
@@ -67,18 +86,51 @@ export class AsyncQueue {
 		}
 	}
 
-	enqueue<T>(func: Resolver<T>, priority: number = this.defaultPriority) {
+	/**
+	 * Creates and enqueues a Promise initialiser
+	 * @param executor A function in the form of a Promise initialiser `(resolve, reject) => void`
+	 * @param priority A queue priority for this entry; lower values place the task toward the front of the queue
+	 * @returns A Promise, to be settled by `executor`
+	 */
+	promise<T>(executor: Resolver<T>, priority: number = this.defaultPriority) {
 		return new Promise<T>((resolve, reject) => {
-			const task = { func, priority, resolve, reject };
-
-			const insertIdx = this.getInsertionIndex(priority);
+			const task = { func: executor, priority, resolve, reject };
 			this.adjustPriorityCount(priority, 1);
+			const size = this.queue.length;
 
-			this.queue.splice(insertIdx, 0, task);
+			if (
+				size == 0
+				|| this.queue[size - 1].priority <= priority
+			) {
+				this.queue.push(task);
+			} else {
+				const insertIdx = this.getInsertionIndex(priority);
+				this.queue.splice(insertIdx, 0, task);
+			}
+
 			this.continue();
 		});
 	}
 
+	/**
+	 * Enqueues an asynchronous function
+	 * @param func The function to enqueue
+	 * @param priority A queue priority for this entry; lower values place the task toward the front of the queue
+	 * @returns A promise, to be settled by the given function
+	 */
+	enqueueFunc<T>(func: () => Promise<T>, priority?: number) {
+		return this.promise<T>(
+			(resolve, reject) => func().then(resolve, reject),
+			priority
+		);
+	}
+
+	/**
+	 * Wraps an asynchronous function and provides an identically-signed function that enqueues calls
+	 * @param fn The function to wrap
+	 * @param priority A fixed priority for the wrapped function, or a separate function that takes a call's arguments to determine priority; lower values place the task toward the front of the queue
+	 * @returns 
+	 */
 	createFunc<F extends (...args: any[]) => Promise<any>>(
 		fn: F,
 		priority: number | ((...args: Parameters<F>) => number) = this.defaultPriority
@@ -86,13 +138,35 @@ export class AsyncQueue {
 		type A = Parameters<F>;
 		type R = ReturnType<F> extends Promise<infer T> ? T : never;
 		return typeof priority == "function"
-			? (...args: A) => this.enqueue<R>(
-				(resolve, reject) => fn(...args).then(resolve, reject),
+			? (...args: A) => this.enqueueFunc<R>(
+				() => fn(...args),
 				priority(...args)
 			)
-			: (...args: A) => this.enqueue<R>(
-				(resolve, reject) => fn(...args).then(resolve, reject),
+			: (...args: A) => this.enqueueFunc<R>(
+				() => fn(...args),
 				priority
 			);
+	}
+
+	/**
+	 * Clears the queue
+	 * 
+	 * Does not affect any on-going tasks
+	 */
+	clear() {
+		this.queue.splice(0, this.queue.length);
+		this.priorityCounts.clear();
+	}
+
+	/**
+	 * Rejects all enqueued tasks
+	 * 
+	 * Does not affect any on-going tasks
+	 * @param value Optional value to reject all tasks with
+	 */
+	panic(value?: any) {
+		const rejecters = this.queue.map(task => task.reject);
+		this.clear();
+		rejecters.forEach(r => r(value));
 	}
 }

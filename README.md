@@ -15,19 +15,19 @@ const queue = new AsyncQueue();
 
 // enqueue a task with a Promise-like interface:
 // (enqueue() returns a promise that forwards the task's resolution)
-const text = await queue.enqueue<Response>(resolve => {
+const text = await queue.promise<Response>(resolve => {
     fetch(someUrl).then(resolve);
 }).then(r => r.text());
 
 // enqueue a task with a specific priority:
-queue.enqueue(resolve => {
+queue.promise(resolve => {
     someAsyncOperation().then(resolve);
 }, 1);
 ```
 
 As well as resolution, promise rejection is forwarded by `enqueue`:
 ```ts
-queue.enqueue((resolve, reject) => {
+queue.promise((resolve, reject) => {
     fetch("doesntexist.lol").then(resolve, reject);
 }).catch((err) => console.warn("fetch failed:", err));
 ```
