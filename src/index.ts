@@ -40,14 +40,16 @@ export class AsyncQueue {
 	private maxConcurrent: number;
 	private defaultPriority: number;
 	private delayMs: number;
-	private paused: boolean;
+	private _paused: boolean;
 
 	constructor(options?: AsyncQueueOptions) {
 		this.maxConcurrent = options?.maxConcurrent ?? 1;
 		this.defaultPriority = options?.defaultPriority ?? 5;
 		this.delayMs = options?.delayMs ?? 0;
-		this.paused = options?.paused ?? false;
+		this._paused = options?.paused ?? false;
 	}
+
+	get paused(){ return this._paused }
 
 	private adjustPriorityCount(priority: number, delta: number) {
 		const value = (this.priorityCounts.get(priority) ?? 0) + delta;
@@ -70,7 +72,7 @@ export class AsyncQueue {
 	}
 
 	private continue() {
-		if (this.paused) return;
+		if (this._paused) return;
 		while (this.busyTasks < this.maxConcurrent) {
 			if (this.queue.length == 0) return;
 
@@ -83,21 +85,21 @@ export class AsyncQueue {
 			result.then(
 				value => task.resolve(value),
 				value => task.reject(value)
-			).finally(
-				this.delayMs == 0 ? () => {
+			).finally(() => {
+				if (this.delayMs == 0) {
 					this.busyTasks--;
 					this.continue();
-				} : () => setTimeout(() => {
+				} else setTimeout(() => {
 					this.busyTasks--;
 					this.continue();
 				}, this.delayMs)
-			);
+			});
 		}
 	}
 
 	/**
 	 * Creates and enqueues a Promise initialiser
-	 * @param executor A function in the form of a Promise initialiser `(resolve, reject) => void`
+	 * @param executor A function in the form of a Promise initialiser, ie `(resolve, reject) => void`
 	 * @param priority A queue priority for this entry; lower values place the task toward the front of the queue
 	 * @returns A Promise, to be settled by `executor`
 	 */
@@ -138,7 +140,7 @@ export class AsyncQueue {
 	 * Wraps an asynchronous function and provides an identically-signed function that enqueues calls
 	 * @param fn The function to wrap
 	 * @param priority A fixed priority for the wrapped function, or a separate function that takes a call's arguments to determine priority; lower values place the task toward the front of the queue
-	 * @returns 
+	 * @returns The new function
 	 */
 	createFunc<F extends (...args: any[]) => Promise<any>>(
 		fn: F,
@@ -185,14 +187,14 @@ export class AsyncQueue {
 	 * Does not affect any on-going tasks
 	 */
 	pause() {
-		this.paused = true;
+		this._paused = true;
 	}
 
 	/**
-	 * Resumes queue processing
+	 * Resumes queue processing when paused
 	 */
 	resume() {
-		this.paused = false;
+		this._paused = false;
 		this.continue();
 	}
 
